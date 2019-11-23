@@ -12,9 +12,13 @@ module.exports =
       @dirName = Path.dirname(@path)
       if @name == '..'
         @path = Path.dirname(Path.dirname(@path))
+      @lastLoaded = @lastModified
 
     isHidden: (callback) ->
       callback(!(@name[0] == "." && @name.length > 2))
 
     serializeParams: ->
       {@path, @isFile, @isDir, @isLink, @size, @permissions, @lastModified}
+
+    needsRefresh: ->
+      @lastLoaded < @lastModified

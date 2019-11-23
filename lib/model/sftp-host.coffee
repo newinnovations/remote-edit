@@ -169,7 +169,10 @@ module.exports =
       )
 
     isConnected: ->
-      @connection? and @connection._sock and @connection._sock.writable and @connection._sshstream and  @connection._sshstream.writable
+      # @connection? and @connection._sock and @connection._sock.writable and @connection._sshstream and  @connection._sshstream.writable
+      if !@connection
+        return false
+      (@connection._state? and @connection._state isnt 'closed') or (@connection._sshstream?.writable and @connection._sock?.writable)
 
     getFilesMetadata: (path, callback) ->
       async.waterfall([
@@ -206,12 +209,39 @@ module.exports =
         (callback) =>
           @connection.sftp(callback)
         (sftp, callback) =>
-          sftp.fastGet(localFile.remoteFile.path, localFile.path, (err) => callback?(err, sftp))
+          sftp.fastGet(localFile.remoteFile.path, localFile.path, (err) => callback(err, sftp))
+        (sftp, callback) =>
+          sftp.stat(localFile.remoteFile.path, (err, data) => callback(err, sftp, data))
+        (sftp, data, callback) =>
+          localFile.remoteFile.lastModified = data.mtime
+          localFile.remoteFile.lastLoaded = data.mtime
+          callback?(null, sftp)
       ], (err, sftp) =>
         @emitter.emit('info', {message: "Error when reading remote file sftp://#{@username}@#{@hostname}:#{@port}#{localFile.remoteFile.path}", type: 'error'}) if err?
         @emitter.emit('info', {message: "Successfully read remote file sftp://#{@username}@#{@hostname}:#{@port}#{localFile.remoteFile.path}", type: 'success'}) if !err?
         sftp?.end()
         callback?(err, localFile)
+      )
+
+    updateLastModified: (localFile, callback) ->
+      @emitter.emit 'info', {message: "Checking remote file sftp://#{@username}@#{@hostname}:#{@port}#{localFile.remoteFile.path}", type: 'info'}
+      async.waterfall([
+        (callback) =>
+          @connection.sftp(callback)
+        (sftp, callback) =>
+          sftp.stat(localFile.remoteFile.path, (err, data) => callback(err, sftp, data))
+        (sftp, data, callback) =>
+          localFile.remoteFile.lastModified = data.mtime
+          sftp.end()
+          callback?()
+      ], (err) =>
+        if err?
+          @emitter.emit('info', {message: "Error occured while checking remote file sftp://#{@username}@#{@hostname}:#{@port}#{localFile.remoteFile.path}", type: 'error'})
+          console.error err if err?
+        else
+          @emitter.emit('info', {message: "Successfully updated mtime sftp://#{@username}@#{@hostname}:#{@port}#{localFile.remoteFile.path}", type: 'success'})
+
+        callback?(err)
       )
 
     writeFile: (localFile, callback) ->
@@ -220,15 +250,17 @@ module.exports =
         (callback) =>
           @connection.sftp(callback)
         (sftp, callback) ->
-          @tmp_sftp = sftp
-          sftp.fastPut(localFile.path, localFile.remoteFile.path, callback)
-        (callback) ->
-          @tmp_sftp.end()
-          callback?()
+          sftp.fastPut(localFile.path, localFile.remoteFile.path, (err) => callback(err, sftp))
+        (sftp, callback) =>
+          sftp.stat(localFile.remoteFile.path, (err, data) => callback(err, sftp, data))
+        (sftp, data, callback) =>
+          localFile.remoteFile.lastModified = data.mtime
+          localFile.remoteFile.lastLoaded = data.mtime
+          sftp.end(callback)
       ], (err) =>
         if err?
+          console.error err
           @emitter.emit('info', {message: "Error occured when writing remote file sftp://#{@username}@#{@hostname}:#{@port}#{localFile.remoteFile.path}<br/>#{err}", type: 'error'})
-          console.error err if err?
         else
           @emitter.emit('info', {message: "Successfully wrote remote file sftp://#{@username}@#{@hostname}:#{@port}#{localFile.remoteFile.path}", type: 'success'})
 

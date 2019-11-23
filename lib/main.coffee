@@ -39,6 +39,18 @@ module.exports =
                         but will introduce the overhead of reconnecting on every save"""
           type: 'boolean'
           default: false
+        fileModifiedCheckInterval:
+          title: '[EXPERIMENTAL] Check remote file for changes and auto-refresh'
+          description: """Periodically check all the open files (using stat and
+                       mtime). When a change is detected, if the local file is
+                       not modified, it will automatically reload the tab. If
+                       both local and remote files are changed, then a panel will
+                       be displayed for the user to choose action (reload or ignore)
+                       A value of 0 disables checking (value in seconds).
+                       NOTE: It applies ONLY to newly opened tabs
+                       """
+          type: 'integer'
+          default: 0
     notifications:
       title: 'Display notifications'
       type: 'boolean'
