@@ -2,7 +2,7 @@
   "name": "remote-edit-ni",
   "main": "./lib/main.coffee",
   "version": "3.5.1",
-  "description": "Edit remote files using SSH/FTP. Remote-edit-ni is a continuation of the abandoned remote-edit package (the suffix -ni reffering to the newinnovations fork). It is compatible with the latest version of atom (1.29.x at the time of writing) and contains a lot of new features.",
+  "description": "Edit remote files using SSH/FTP. Remote-edit-ni is a continuation of the abandoned remote-edit package (the suffix -ni reffering to the newinnovations fork). It is compatible with the latest version of atom (1.41.x at the time of writing) and contains a lot of new features.",
   "homepage": "https://github.com/newinnovations/remote-edit-ni",
   "repository": {
     "type": "git",
@@ -45,7 +45,7 @@
   },
   "optionalDependencies": {
     "keytar": "~3.0.0",
-    "platform-folders": ">=0.2.6"
+    "platform-folders": ">=0.4.1"
   },
   "devDependencies": {
     "temp": "*"
